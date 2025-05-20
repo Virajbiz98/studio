@@ -438,7 +438,7 @@ const ResumeForm: React.FC = () => {
                                           </Button>
                                           <Button type="button" variant="ghost" size="icon" onClick={() => {
                                             const newVal = [...value];
-                                            newval.splice(rIndex, 1);
+                                            newVal.splice(rIndex, 1); // Corrected typo 'newval' to 'newVal'
                                             onChange(newVal);
                                           }}>
                                             <Trash2 className="h-4 w-4" />
@@ -477,24 +477,6 @@ const ResumeForm: React.FC = () => {
                 <TabsContent value="ai-tools" className="p-6">
                   <CardContent className="space-y-8">
                     <section>
-                      <h3 className="text-xl font-semibold mb-3 flex items-center"><FileText className="mr-2 h-5 w-5 text-accent" />Resume Objective</h3>
-                      <Textarea
-                        id="objective"
-                        placeholder="Enter your resume objective or generate one with AI."
-                        rows={4}
-                        {...register('objective')}
-                        className="mb-2"
-                      />
-                      <Button type="button" onClick={handleGenerateObjective} disabled={aiState.isObjectiveLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                        {aiState.isObjectiveLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Generate Objective with AI
-                      </Button>
-                      {errors.objective && <p className="text-sm text-destructive">{errors.objective.message}</p>}
-                    </section>
-
-                    <Separator />
-
-                    <section>
                       <h3 className="text-xl font-semibold mb-3 flex items-center"><Sparkles className="mr-2 h-5 w-5 text-accent" />AI Job Description Analysis (Optional)</h3>
                       <Label htmlFor="jobDescription">Paste Job Description Here</Label>
                       <Textarea
@@ -519,6 +501,24 @@ const ResumeForm: React.FC = () => {
                           </CardContent>
                         </Card>
                       )}
+                    </section>
+
+                    <Separator />
+
+                    <section>
+                      <h3 className="text-xl font-semibold mb-3 flex items-center"><FileText className="mr-2 h-5 w-5 text-accent" />Resume Objective</h3>
+                      <Textarea
+                        id="objective"
+                        placeholder="Enter your resume objective or generate one with AI."
+                        rows={4}
+                        {...register('objective')}
+                        className="mb-2"
+                      />
+                      <Button type="button" onClick={handleGenerateObjective} disabled={aiState.isObjectiveLoading} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                        {aiState.isObjectiveLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Generate Objective with AI
+                      </Button>
+                      {errors.objective && <p className="text-sm text-destructive">{errors.objective.message}</p>}
                     </section>
                   </CardContent>
                   <CardFooter className="p-6 border-t mt-6">
