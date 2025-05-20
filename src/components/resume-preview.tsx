@@ -4,17 +4,25 @@ import Image from 'next/image';
 
 interface ResumePreviewProps {
   resumeData: ResumeData;
+  leftColumnBgColor: string;
+  leftColumnTextColor: string;
+  skillTagBgColor: string;
+  skillTagTextColor: string;
 }
 
-const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
+const ResumePreview: React.FC<ResumePreviewProps> = ({ 
+  resumeData, 
+  leftColumnBgColor, 
+  leftColumnTextColor,
+  skillTagBgColor,
+  skillTagTextColor
+}) => {
   const { personalDetails, professionalDetails, objective } = resumeData;
 
-  const pâleCreamYellow = '#FFF9E6'; // A bit more yellow than FFFBEF
-  const darkText = '#333333';
-  const headerBlue = '#EFF6FF'; // Light blue for header
-  const accentTeal = '#39A2DB';
-  const primaryDeepBlue = '#30475E';
-  const skillTagBg = '#F3F4F6'; // Light gray for skill tags
+  const headerBlue = '#EFF6FF'; // Light blue for header, can be made dynamic if needed
+  const accentTeal = '#39A2DB'; // Main accent for lines, etc.
+  const primaryDeepBlue = '#30475E'; // For main titles in right column, or other primary elements
+  const rightColumnTextColor = '#333333'; // Standard dark text for right column content
 
   const renderBulletList = (items: string[], itemStyle?: React.CSSProperties) => (
     <ul style={{ listStyleType: 'disc', paddingLeft: '20px', margin: '5px 0 0 0' }}>
@@ -24,7 +32,7 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
     </ul>
   );
 
-  const sectionTitleStyle: React.CSSProperties = {
+  const sectionTitleStyle: React.CSSProperties = { // For right column sections
     fontSize: '14px',
     fontWeight: 'bold',
     color: primaryDeepBlue,
@@ -37,22 +45,41 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
   const leftColumnSectionTitleStyle: React.CSSProperties = {
     fontSize: '13px',
     fontWeight: 'bold',
-    color: primaryDeepBlue, // Dark text for left column titles
+    color: leftColumnTextColor, // Dynamic text color
     paddingBottom: '3px',
     marginBottom: '8px',
     textTransform: 'uppercase',
   };
 
   const skillItemStyle: React.CSSProperties = {
-    backgroundColor: skillTagBg,
+    backgroundColor: skillTagBgColor, // Dynamic skill tag background
     padding: '5px 10px',
     borderRadius: '4px',
     marginBottom: '6px',
     fontSize: '11px',
-    color: darkText,
-    borderBottom: `2px solid ${primaryDeepBlue}`,
+    color: skillTagTextColor, // Dynamic skill tag text color
+    borderBottom: `2px solid ${leftColumnTextColor === '#FFFFFF' ? '#FFFFFF' : primaryDeepBlue}`, // Border color contrasts with left col text
     display: 'block',
   };
+  
+  const leftColumnTextStyle: React.CSSProperties = {
+    fontSize: '11px',
+    color: leftColumnTextColor, // Dynamic text color
+    marginBottom: '3px',
+  };
+  
+  const leftColumnBoldTextStyle: React.CSSProperties = {
+    ...leftColumnTextStyle,
+    fontWeight: 'bold',
+    margin: '0 0 2px 0',
+  };
+  
+  const leftColumnItalicTextStyle: React.CSSProperties = {
+    ...leftColumnTextStyle,
+    fontStyle: 'italic',
+     margin: '0',
+  };
+
 
   return (
     <div
@@ -65,20 +92,19 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
         flexDirection: 'row',
         boxShadow: '0 0 10px rgba(0,0,0,0.1)', 
         margin: '0 auto',
-        backgroundColor: '#FFFFFF', // Overall background for the page
+        backgroundColor: '#FFFFFF', 
       }}
     >
       {/* Left Column */}
       <div
         style={{
-          width: '35%', // Adjusted width
-          backgroundColor: pâleCreamYellow, 
-          color: darkText, 
+          width: '35%', 
+          backgroundColor: leftColumnBgColor, // Dynamic background color
+          color: leftColumnTextColor, // Dynamic text color
           padding: '25px 20px',
           display: 'flex',
           flexDirection: 'column',
           boxSizing: 'border-box',
-          position: 'relative', // For photo positioning if needed
         }}
       >
         {personalDetails.photoPreview && (
@@ -89,7 +115,7 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
             borderRadius: '50%', 
             overflow: 'hidden', 
             alignSelf: 'center',
-            border: `3px solid ${primaryDeepBlue}`
+            border: `3px solid ${leftColumnTextColor === '#FFFFFF' ? '#FFFFFF' : primaryDeepBlue}` // Border contrasts with photo bg
           }}>
             <Image 
               src={personalDetails.photoPreview} 
@@ -103,20 +129,20 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
         )}
 
         <h2 style={leftColumnSectionTitleStyle}>Personal Info</h2>
-        <p style={{ fontSize: '11px', marginBottom: '3px' }}>{personalDetails.email}</p>
-        <p style={{ fontSize: '11px', marginBottom: '3px' }}>{personalDetails.phone}</p>
-        <p style={{ fontSize: '11px', marginBottom: '15px' }}>{personalDetails.address}</p>
-        {personalDetails.linkedin && <p style={{ fontSize: '11px', marginBottom: '15px', wordBreak: 'break-all' }}>LinkedIn: {personalDetails.linkedin}</p>}
+        <p style={leftColumnTextStyle}>{personalDetails.email}</p>
+        <p style={leftColumnTextStyle}>{personalDetails.phone}</p>
+        <p style={{...leftColumnTextStyle, marginBottom: '15px' }}>{personalDetails.address}</p>
+        {personalDetails.linkedin && <p style={{ ...leftColumnTextStyle, marginBottom: '15px', wordBreak: 'break-all' }}>LinkedIn: {personalDetails.linkedin}</p>}
 
         {professionalDetails.education.length > 0 && (
           <>
             <h2 style={{...leftColumnSectionTitleStyle, marginTop: '15px' }}>Education</h2>
             {professionalDetails.education.map(edu => (
-              <div key={edu.id} style={{ marginBottom: '10px', fontSize: '11px' }}>
-                <p style={{ fontWeight: 'bold', margin: '0 0 2px 0' }}>{edu.degree}</p>
-                <p style={{ margin: '0 0 2px 0' }}>{edu.institution}</p>
-                <p style={{ fontStyle: 'italic', margin: '0' }}>{edu.graduationYear}</p>
-                {edu.details && <p style={{ fontSize: '10px', marginTop: '3px' }}>{edu.details}</p>}
+              <div key={edu.id} style={{ marginBottom: '10px' }}>
+                <p style={leftColumnBoldTextStyle}>{edu.degree}</p>
+                <p style={leftColumnTextStyle}>{edu.institution}</p>
+                <p style={leftColumnItalicTextStyle}>{edu.graduationYear}</p>
+                {edu.details && <p style={{ ...leftColumnTextStyle, fontSize: '10px', marginTop: '3px' }}>{edu.details}</p>}
               </div>
             ))}
           </>
@@ -152,28 +178,26 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
       {/* Right Column */}
       <div
         style={{
-          width: '65%', // Adjusted width
-          color: darkText, 
-          padding: '0', // Padding handled by inner container
+          width: '65%', 
+          color: rightColumnTextColor, 
+          padding: '0', 
           boxSizing: 'border-box',
           display: 'flex',
           flexDirection: 'column',
         }}
       >
-        {/* Name and Title Header */}
         <div style={{ backgroundColor: headerBlue, padding: '30px 25px 20px 25px', textAlign: 'left' }}>
           <h1 style={{ fontSize: '30px', fontWeight: 'bold', color: primaryDeepBlue, marginBottom: '5px', lineHeight: '1.1' }}>
             {personalDetails.name || "Your Name"}
           </h1>
-          {/* You can add a field for "Title/Profession" in personalDetails or professionalDetails if needed */}
-          <p style={{ fontSize: '16px', color: primaryDeepBlue, margin: '0' }}>{/* Example: Web Developer / Project Manager */}</p> 
+          <p style={{ fontSize: '16px', color: primaryDeepBlue, margin: '0' }}>{/* Placeholder for Title/Profession */}</p> 
         </div>
 
-        <div style={{padding: '20px 25px 25px 25px', flexGrow: 1}}> {/* Content padding for right column */}
+        <div style={{padding: '20px 25px 25px 25px', flexGrow: 1}}>
           {objective && (
             <section style={{ marginBottom: '20px' }}>
               <h2 style={sectionTitleStyle}>Summary</h2>
-              <p style={{ fontSize: '12px', lineHeight: '1.6', color: darkText }}>{objective}</p>
+              <p style={{ fontSize: '12px', lineHeight: '1.6', color: rightColumnTextColor }}>{objective}</p>
             </section>
           )}
           
@@ -183,9 +207,9 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
               {professionalDetails.experience.map(exp => (
                 <div key={exp.id} style={{ marginBottom: '15px' }}>
                   <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: primaryDeepBlue, margin: '0 0 2px 0' }}>{exp.role}</h3>
-                  <p style={{ fontSize: '12px', fontWeight: 'normal', color: darkText, margin: '0 0 2px 0' }}>{exp.company}</p>
+                  <p style={{ fontSize: '12px', fontWeight: 'normal', color: rightColumnTextColor, margin: '0 0 2px 0' }}>{exp.company}</p>
                   <p style={{ fontSize: '11px', fontStyle: 'italic', color: '#555555', marginBottom: '5px' }}>{exp.duration}</p>
-                  {renderBulletList(exp.responsibilities, { fontSize: '12px', color: darkText })}
+                  {renderBulletList(exp.responsibilities, { fontSize: '12px', color: rightColumnTextColor })}
                 </div>
               ))}
             </section>
@@ -194,7 +218,7 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
           {professionalDetails.achievements.length > 0 && (
             <section style={{ marginBottom: '20px' }}>
               <h2 style={sectionTitleStyle}>Achievements</h2>
-              <div style={{ fontSize: '12px', color: darkText }}>
+              <div style={{ fontSize: '12px', color: rightColumnTextColor }}>
                {renderBulletList(professionalDetails.achievements)}
               </div>
             </section>
@@ -202,7 +226,7 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
 
           <section>
             <h2 style={sectionTitleStyle}>References</h2>
-            <p style={{ fontSize: '12px', fontStyle: 'italic', color: darkText }}>References available upon request.</p>
+            <p style={{ fontSize: '12px', fontStyle: 'italic', color: rightColumnTextColor }}>References available upon request.</p>
           </section>
         </div>
       </div>

@@ -21,7 +21,7 @@ import { enhanceResponsibility, type EnhanceResponsibilityInput } from '@/ai/flo
 import type { ResumeData, PersonalDetails, ProfessionalDetails, EducationEntry, ExperienceEntry, AiAnalysisState } from '@/types/resume';
 import { initialResumeData, initialAiAnalysisState } from '@/types/resume';
 import Image from 'next/image';
-import { User, Mail, Phone, MapPin, Linkedin, Briefcase, GraduationCap, Award, Lightbulb, Sparkles, FileText, Trash2, PlusCircle, Loader2, Download, Brain, Wand2 } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Linkedin, Briefcase, GraduationCap, Award, Lightbulb, Sparkles, FileText, Trash2, PlusCircle, Loader2, Download, Brain, Wand2, Palette } from 'lucide-react';
 import ResumePreview from './resume-preview';
 import {
   Dialog,
@@ -32,6 +32,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 
 const personalDetailsSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -74,6 +82,14 @@ const resumeFormSchema = z.object({
   objective: z.string().optional(),
 });
 
+const leftColumnColorOptions = [
+  { name: 'Pale Cream Yellow', value: '#FFF9E6', textColor: '#333333', skillTagBg: '#F3F4F6', skillTagTextColor: '#333333' },
+  { name: 'Deep Blue (Classic)', value: '#30475E', textColor: '#FFFFFF', skillTagBg: '#4A6572', skillTagTextColor: '#FFFFFF' },
+  { name: 'Light Steel Blue', value: '#B0C4DE', textColor: '#2c3e50', skillTagBg: '#D6EAF8', skillTagTextColor: '#2c3e50' },
+  { name: 'Soft Teal', value: '#A0D2DB', textColor: '#285560', skillTagBg: '#E0F2F1', skillTagTextColor: '#285560' },
+  { name: 'Misty Rose', value: '#FFE4E1', textColor: '#721c24', skillTagBg: '#FADBD8', skillTagTextColor: '#721c24' },
+];
+
 
 const ResumeForm: React.FC = () => {
   const { toast } = useToast();
@@ -90,6 +106,13 @@ const ResumeForm: React.FC = () => {
   } | null>(null);
   const [selectedSuggestion, setSelectedSuggestion] = useState<string>('');
   const [isSuggestionDialogOpen, setIsSuggestionDialogOpen] = useState(false);
+
+  const [selectedLeftColumnTheme, setSelectedLeftColumnTheme] = useState(leftColumnColorOptions[0]);
+
+  const handleLeftColumnColorChange = (value: string) => {
+    const selectedOption = leftColumnColorOptions.find(opt => opt.value === value) || leftColumnColorOptions[0];
+    setSelectedLeftColumnTheme(selectedOption);
+  };
 
 
   const { control, register, handleSubmit, watch, setValue, getValues, formState: { errors } } = useForm<ResumeData>({
@@ -196,7 +219,7 @@ const ResumeForm: React.FC = () => {
   const handleEnhanceResponsibilityClick = async (experienceIndex: number, responsibilityIndex: number, originalText: string) => {
     setCurrentResponsibilityData({ experienceIndex, responsibilityIndex, originalText });
     setIsEnhancingResponsibility(true);
-    setEnhancementSuggestions([]); // Clear previous suggestions
+    setEnhancementSuggestions([]); 
 
     try {
       const currentRole = watchedProfessionalDetails.experience[experienceIndex]?.role || '';
@@ -208,7 +231,7 @@ const ResumeForm: React.FC = () => {
       const result = await enhanceResponsibility(input);
       if (result.suggestedResponsibilities && result.suggestedResponsibilities.length > 0) {
         setEnhancementSuggestions(result.suggestedResponsibilities);
-        setSelectedSuggestion(result.suggestedResponsibilities[0]); // Pre-select the first suggestion
+        setSelectedSuggestion(result.suggestedResponsibilities[0]); 
         setIsSuggestionDialogOpen(true);
       } else {
         toast({ title: 'No Suggestions', description: 'AI could not generate suggestions for this item.', variant: 'default' });
@@ -228,7 +251,6 @@ const ResumeForm: React.FC = () => {
       currentResponsibilities[responsibilityIndex] = selectedSuggestion;
       setValue(`professionalDetails.experience.${experienceIndex}.responsibilities`, currentResponsibilities, { shouldValidate: true });
 
-      // Close dialog and reset states
       setIsSuggestionDialogOpen(false);
       setCurrentResponsibilityData(null);
       setEnhancementSuggestions([]);
@@ -284,7 +306,7 @@ const ResumeForm: React.FC = () => {
     <>
       <div className="container mx-auto p-4 md:p-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          <Card className="shadow-2xl lg:flex-1"> {/* Form Card */}
+          <Card className="shadow-2xl lg:flex-1"> 
             <CardHeader className="bg-primary text-primary-foreground p-6 rounded-t-lg">
               <CardTitle className="text-3xl font-bold flex items-center">
                 <Sparkles className="mr-3 h-8 w-8" /> Resumaker.ai
@@ -337,13 +359,30 @@ const ResumeForm: React.FC = () => {
                           </div>
                         )}
                       </div>
+                      <div className="md:col-span-2">
+                        <Label htmlFor="leftColumnColor" className="flex items-center"><Palette className="mr-2 h-4 w-4" />Resume Accent Color (Left Column)</Label>
+                        <Select value={selectedLeftColumnTheme.value} onValueChange={handleLeftColumnColorChange}>
+                          <SelectTrigger id="leftColumnColor">
+                            <SelectValue placeholder="Select a color theme" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {leftColumnColorOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                <div className="flex items-center">
+                                  <span className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: option.value, border: '1px solid #ccc' }}></span>
+                                  {option.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </CardContent>
                 </TabsContent>
 
                 <TabsContent value="professional" className="p-6">
                   <CardContent className="space-y-8">
-                    {/* Education Section */}
                     <section>
                       <h3 className="text-xl font-semibold mb-3 flex items-center"><GraduationCap className="mr-2 h-5 w-5 text-primary" />Education</h3>
                       {educationFields.map((field, index) => (
@@ -381,7 +420,6 @@ const ResumeForm: React.FC = () => {
 
                     <Separator />
 
-                    {/* Experience Section */}
                     <section>
                       <h3 className="text-xl font-semibold mb-3 flex items-center"><Briefcase className="mr-2 h-5 w-5 text-primary" />Experience</h3>
                       {experienceFields.map((field, expIndex) => (
@@ -438,7 +476,7 @@ const ResumeForm: React.FC = () => {
                                           </Button>
                                           <Button type="button" variant="ghost" size="icon" onClick={() => {
                                             const newVal = [...value];
-                                            newVal.splice(rIndex, 1); // Corrected typo 'newval' to 'newVal'
+                                            newVal.splice(rIndex, 1);
                                             onChange(newVal);
                                           }}>
                                             <Trash2 className="h-4 w-4" />
@@ -476,7 +514,7 @@ const ResumeForm: React.FC = () => {
 
                 <TabsContent value="ai-tools" className="p-6">
                   <CardContent className="space-y-8">
-                    <section>
+                     <section>
                       <h3 className="text-xl font-semibold mb-3 flex items-center"><Sparkles className="mr-2 h-5 w-5 text-accent" />AI Job Description Analysis (Optional)</h3>
                       <Label htmlFor="jobDescription">Paste Job Description Here</Label>
                       <Textarea
@@ -532,7 +570,6 @@ const ResumeForm: React.FC = () => {
             </form>
           </Card>
 
-          {/* Live Preview Section - Only on large screens */}
           <div className="hidden lg:block lg:w-1/2 sticky top-8 self-start">
             <Card className="shadow-lg">
               <CardHeader className="bg-secondary">
@@ -540,7 +577,13 @@ const ResumeForm: React.FC = () => {
               </CardHeader>
               <CardContent className="p-2" style={{ maxHeight: 'calc(100vh - 10rem)', overflowY: 'auto' }}>
                 <div className="p-2 bg-white rounded">
-                   <ResumePreview resumeData={resumeData} />
+                   <ResumePreview 
+                    resumeData={resumeData} 
+                    leftColumnBgColor={selectedLeftColumnTheme.value}
+                    leftColumnTextColor={selectedLeftColumnTheme.textColor}
+                    skillTagBgColor={selectedLeftColumnTheme.skillTagBg}
+                    skillTagTextColor={selectedLeftColumnTheme.skillTagTextColor}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -548,11 +591,10 @@ const ResumeForm: React.FC = () => {
         </div>
       </div>
 
-      {/* AI Suggestion Dialog for Responsibilities */}
       <Dialog open={isSuggestionDialogOpen} onOpenChange={(isOpen) => {
         setIsSuggestionDialogOpen(isOpen);
         if (!isOpen) {
-          setCurrentResponsibilityData(null); // Reset if dialog is closed
+          setCurrentResponsibilityData(null);
           setEnhancementSuggestions([]);
         }
       }}>
@@ -595,5 +637,3 @@ const ResumeForm: React.FC = () => {
 };
 
 export default ResumeForm;
-
-    
