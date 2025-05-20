@@ -8,7 +8,7 @@ interface ResumePreviewProps {
 
 const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
   const { personalDetails, professionalDetails, objective } = resumeData;
-  const { aiSuggestions } = professionalDetails; // Destructure aiSuggestions
+  // aiSuggestions are no longer part of professionalDetails for PDF output
 
   const renderBulletList = (items: string[]) => (
     <ul style={{ listStyleType: 'disc', paddingLeft: '20px', margin: '5px 0' }}>
@@ -148,18 +148,10 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
           </>
         )}
 
-        {aiSuggestions && (
-          <>
-            <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#39A2DB', borderBottom: '2px solid #39A2DB', paddingBottom: '5px', marginBottom: '10px', marginTop: '15px' }}>AI-Powered Suggestions</h2>
-            <p style={{ fontSize: '14px', marginBottom: '15px', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
-              {aiSuggestions}
-            </p>
-          </>
-        )}
+        {/* AI Suggestions section removed from here */}
       </div>
     </div>
   );
 };
 
 export default ResumePreview;
-

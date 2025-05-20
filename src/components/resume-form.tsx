@@ -56,7 +56,7 @@ const professionalDetailsSchema = z.object({
   strengths: z.array(z.string().min(1, 'Strength cannot be empty')),
   weaknesses: z.array(z.string().min(1, 'Weakness cannot be empty')),
   achievements: z.array(z.string().min(1, 'Achievement cannot be empty')),
-  aiSuggestions: z.string().optional(), // Added to schema, though primarily from aiState for PDF
+  // aiSuggestions removed from schema
 });
 
 const resumeFormSchema = z.object({
@@ -81,18 +81,15 @@ const ResumeForm: React.FC = () => {
   const watchedProfessionalDetails = watch("professionalDetails");
   const watchedObjective = watch("objective");
 
-  // Update resumeData state primarily for ResumePreview component's immediate updates (not directly for PDF)
+  // Update resumeData state primarily for ResumePreview component's immediate updates
   React.useEffect(() => {
     setResumeData(prev => ({
       ...prev,
       personalDetails: watchedPersonalDetails,
-      professionalDetails: {
-        ...watchedProfessionalDetails,
-        aiSuggestions: aiState.analysisSuggestions || watchedProfessionalDetails.aiSuggestions, // Prioritize live AI state
-      },
+      professionalDetails: watchedProfessionalDetails, // aiSuggestions are not part of this state anymore
       objective: watchedObjective || prev.objective,
     }));
-  }, [watchedPersonalDetails, watchedProfessionalDetails, watchedObjective, aiState.analysisSuggestions]);
+  }, [watchedPersonalDetails, watchedProfessionalDetails, watchedObjective]);
 
 
   const { fields: educationFields, append: appendEducation, remove: removeEducation } = useFieldArray({
@@ -138,7 +135,7 @@ const ResumeForm: React.FC = () => {
     setAiState(prev => ({ ...prev, isObjectiveLoading: true }));
     try {
       const input: GenerateResumeObjectiveInput = {
-        skills: watchedProfessionalDetails.skills.join(', '), // Use watched value for current data
+        skills: watchedProfessionalDetails.skills.join(', '), 
         experience: watchedProfessionalDetails.experience.map(exp => `${exp.role} at ${exp.company}: ${exp.responsibilities.join('. ')}`).join('; '),
         strengths: watchedProfessionalDetails.strengths.join(', '),
         weaknesses: watchedProfessionalDetails.weaknesses.join(', '),
@@ -161,7 +158,6 @@ const ResumeForm: React.FC = () => {
     }
     setAiState(prev => ({ ...prev, isAnalysisLoading: true }));
     try {
-      // Use watched values for the most current resume details
       const resumeDetailsString = `Skills: ${watchedProfessionalDetails.skills.join(', ')}; Experience: ${watchedProfessionalDetails.experience.map(exp => exp.role + " at " + exp.company).join(', ')}; Strengths: ${watchedProfessionalDetails.strengths.join(', ')}; Education: ${watchedProfessionalDetails.education.map(edu => edu.degree + " from " + edu.institution).join(', ')}.`;
       const input: AnalyzeJobDescriptionInput = {
         jobDescription: aiState.jobDescription,
@@ -169,7 +165,6 @@ const ResumeForm: React.FC = () => {
       };
       const result = await analyzeJobDescription(input);
       setAiState(prev => ({ ...prev, analysisSuggestions: result.suggestions, isAnalysisLoading: false }));
-      // setValue('professionalDetails.aiSuggestions', result.suggestions); // Optionally set in RHF if needed elsewhere
       toast({ title: 'Analysis Complete', description: 'AI has provided suggestions based on the job description.' });
     } catch (error) {
       console.error('Error analyzing job description:', error);
@@ -183,10 +178,7 @@ const ResumeForm: React.FC = () => {
     try {
       const currentFormData: ResumeData = { 
         personalDetails: watchedPersonalDetails,
-        professionalDetails: {
-          ...watchedProfessionalDetails,
-          aiSuggestions: aiState.analysisSuggestions, // Add AI suggestions here for PDF generation
-        },
+        professionalDetails: watchedProfessionalDetails, // aiSuggestions are no longer part of professionalDetails for PDF
         objective: watchedObjective || aiState.generatedObjective, 
       };
       await generatePdf(currentFormData);
@@ -199,7 +191,7 @@ const ResumeForm: React.FC = () => {
     }
   };
 
-  const renderListInput = (label: string, fieldName: keyof Omit<ProfessionalDetails, 'aiSuggestions'>, Icon: React.ElementType) => (
+  const renderListInput = (label: string, fieldName: keyof ProfessionalDetails, Icon: React.ElementType) => (
     <div className="space-y-2">
       <Label htmlFor={fieldName} className="flex items-center"><Icon className="mr-2 h-4 w-4" />{label}</Label>
       {(watchedProfessionalDetails[fieldName] as string[] || []).map((item, index) => (
@@ -274,7 +266,7 @@ const ResumeForm: React.FC = () => {
                     <Input id="photo" type="file" accept="image/*" onChange={handlePhotoUpload} className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"/>
                     {watchedPersonalDetails.photoPreview && (
                       <div className="mt-2 w-24 h-24 rounded-full overflow-hidden border-2 border-primary shadow-md">
-                        <Image src={watchedPersonalDetails.photoPreview} alt="Photo Preview" width={96} height={96} className="object-cover w-full h-full" data-ai-hint="profile photo" />
+                        <Image src={watchedPersonalDetails.photoPreview} alt="Photo Preview" width={96} height={96} className="object-cover w-full h-full" data-ai-hint="profile photo"/>
                       </div>
                     )}
                   </div>
@@ -456,11 +448,10 @@ const ResumeForm: React.FC = () => {
           </Tabs>
         </form>
       </Card>
-      {/* Pass the full resumeData including AI suggestions from local state for preview updates */}
+      {/* Pass the full resumeData. AI suggestions are handled by aiState for UI display only */}
       <ResumePreview resumeData={resumeData} />
     </div>
   );
 };
 
 export default ResumeForm;
-

@@ -32,7 +32,7 @@ export interface ProfessionalDetails {
   strengths: string[];
   weaknesses: string[];
   achievements: string[];
-  aiSuggestions?: string; // Added field for AI suggestions
+  // aiSuggestions was here, now removed
 }
 
 export interface ResumeData {
@@ -44,7 +44,7 @@ export interface ResumeData {
 export interface AiAnalysisState {
   jobDescription: string;
   generatedObjective: string;
-  analysisSuggestions: string;
+  analysisSuggestions: string; // This state can still exist for display in the UI, just not for PDF
   isObjectiveLoading: boolean;
   isAnalysisLoading: boolean;
 }
@@ -66,7 +66,7 @@ export const initialProfessionalDetails: ProfessionalDetails = {
   strengths: [],
   weaknesses: [],
   achievements: [],
-  aiSuggestions: '', // Initialize AI suggestions
+  // aiSuggestions initialization removed
 };
 
 export const initialResumeData: ResumeData = {
@@ -82,4 +82,3 @@ export const initialAiAnalysisState: AiAnalysisState = {
   isObjectiveLoading: false,
   isAnalysisLoading: false,
 };
-
