@@ -163,7 +163,6 @@ const ResumeForm: React.FC = () => {
         resumeDetails: resumeDetailsString,
       };
       const result = await analyzeJobDescription(input);
-      // setValue('professionalDetails.aiSuggestions', result.suggestions, {shouldValidate: true}); // No longer saving to form data for PDF
       setAiState(prev => ({ ...prev, analysisSuggestions: result.suggestions, isAnalysisLoading: false }));
       toast({ title: 'Analysis Complete', description: 'AI has provided suggestions based on the job description.' });
     } catch (error) {
@@ -451,7 +450,7 @@ const ResumeForm: React.FC = () => {
         </Card>
 
         {/* Live Preview Section - Only on large screens */}
-        <div className="hidden lg:block lg:w-2/5 sticky top-8 self-start">
+        <div className="hidden lg:block lg:w-1/2 sticky top-8 self-start">
           <Card className="shadow-lg">
             <CardHeader className="bg-secondary">
               <CardTitle className="text-xl text-secondary-foreground">Live Preview</CardTitle>
@@ -469,3 +468,4 @@ const ResumeForm: React.FC = () => {
 };
 
 export default ResumeForm;
+
