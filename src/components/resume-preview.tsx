@@ -8,7 +8,6 @@ interface ResumePreviewProps {
 
 const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
   const { personalDetails, professionalDetails, objective } = resumeData;
-  // aiSuggestions are no longer part of professionalDetails for PDF output
 
   const renderBulletList = (items: string[]) => (
     <ul style={{ listStyleType: 'disc', paddingLeft: '20px', margin: '5px 0' }}>
@@ -23,14 +22,13 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
       id="resume-preview-content"
       style={{
         fontFamily: 'Arial, sans-serif',
-        width: '210mm', // A4 width
-        minHeight: '297mm', // A4 height, content might make it taller
+        width: '210mm', 
+        minHeight: '297mm', 
         display: 'flex',
         flexDirection: 'row',
         boxShadow: '0 0 10px rgba(0,0,0,0.1)', 
-        position: 'absolute', 
-        left: '-9999px', 
-        top: '-9999px', 
+        margin: '0 auto', // Center the preview in its container
+        // Removed absolute positioning to make it visible in the layout flow
       }}
     >
       {/* Left Column */}
@@ -147,8 +145,6 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
             </div>
           </>
         )}
-
-        {/* AI Suggestions section removed from here */}
       </div>
     </div>
   );
