@@ -88,6 +88,9 @@ const leftColumnColorOptions = [
   { name: 'Light Steel Blue', value: '#B0C4DE', textColor: '#2c3e50', skillTagBg: '#D6EAF8', skillTagTextColor: '#2c3e50' },
   { name: 'Soft Teal', value: '#A0D2DB', textColor: '#285560', skillTagBg: '#E0F2F1', skillTagTextColor: '#285560' },
   { name: 'Misty Rose', value: '#FFE4E1', textColor: '#721c24', skillTagBg: '#FADBD8', skillTagTextColor: '#721c24' },
+  { name: 'Earthy Brown', value: '#A0522D', textColor: '#FFFFFF', skillTagBg: '#D2B48C', skillTagTextColor: '#3A2B1D' },
+  { name: 'Classic Red', value: '#C0392B', textColor: '#FFFFFF', skillTagBg: '#F5B7B1', skillTagTextColor: '#78281F' },
+  { name: 'Forest Green', value: '#228B22', textColor: '#FFFFFF', skillTagBg: '#A9DFBF', skillTagTextColor: '#145A32' },
 ];
 
 
@@ -637,3 +640,5 @@ const ResumeForm: React.FC = () => {
 };
 
 export default ResumeForm;
+
+    
