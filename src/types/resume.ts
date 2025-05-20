@@ -1,3 +1,4 @@
+
 export interface PersonalDetails {
   name: string;
   address: string;
@@ -31,6 +32,7 @@ export interface ProfessionalDetails {
   strengths: string[];
   weaknesses: string[];
   achievements: string[];
+  aiSuggestions?: string; // Added field for AI suggestions
 }
 
 export interface ResumeData {
@@ -64,6 +66,7 @@ export const initialProfessionalDetails: ProfessionalDetails = {
   strengths: [],
   weaknesses: [],
   achievements: [],
+  aiSuggestions: '', // Initialize AI suggestions
 };
 
 export const initialResumeData: ResumeData = {
@@ -79,3 +82,4 @@ export const initialAiAnalysisState: AiAnalysisState = {
   isObjectiveLoading: false,
   isAnalysisLoading: false,
 };
+

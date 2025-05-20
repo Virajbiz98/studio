@@ -1,3 +1,4 @@
+
 import type { ResumeData } from '@/types/resume';
 import Image from 'next/image';
 
@@ -7,6 +8,7 @@ interface ResumePreviewProps {
 
 const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
   const { personalDetails, professionalDetails, objective } = resumeData;
+  const { aiSuggestions } = professionalDetails; // Destructure aiSuggestions
 
   const renderBulletList = (items: string[]) => (
     <ul style={{ listStyleType: 'disc', paddingLeft: '20px', margin: '5px 0' }}>
@@ -25,19 +27,18 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
         minHeight: '297mm', // A4 height, content might make it taller
         display: 'flex',
         flexDirection: 'row',
-        boxShadow: '0 0 10px rgba(0,0,0,0.1)', // For previewing purposes on the page
-        position: 'absolute', // To hide it off-screen for PDF generation
-        left: '-9999px', // Hide off-screen
-        top: '-9999px', // Hide off-screen
-        // display: 'none', // This will be toggled by pdf-generator.ts
+        boxShadow: '0 0 10px rgba(0,0,0,0.1)', 
+        position: 'absolute', 
+        left: '-9999px', 
+        top: '-9999px', 
       }}
     >
       {/* Left Column */}
       <div
         style={{
           width: '30%',
-          backgroundColor: '#30475E', // professional-blue-bg
-          color: '#FFFFFF', // professional-blue-text
+          backgroundColor: '#30475E', 
+          color: '#FFFFFF', 
           padding: '20px',
           display: 'flex',
           flexDirection: 'column',
@@ -84,8 +85,8 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
       <div
         style={{
           width: '70%',
-          backgroundColor: '#FFFFFF', // White
-          color: '#000000', // Black
+          backgroundColor: '#FFFFFF', 
+          color: '#000000', 
           padding: '20px',
           boxSizing: 'border-box',
         }}
@@ -146,9 +147,19 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ resumeData }) => {
             </div>
           </>
         )}
+
+        {aiSuggestions && (
+          <>
+            <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#39A2DB', borderBottom: '2px solid #39A2DB', paddingBottom: '5px', marginBottom: '10px', marginTop: '15px' }}>AI-Powered Suggestions</h2>
+            <p style={{ fontSize: '14px', marginBottom: '15px', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+              {aiSuggestions}
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
 };
 
 export default ResumePreview;
+

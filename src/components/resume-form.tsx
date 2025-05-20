@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ChangeEvent, FormEvent } from 'react';
@@ -55,6 +56,7 @@ const professionalDetailsSchema = z.object({
   strengths: z.array(z.string().min(1, 'Strength cannot be empty')),
   weaknesses: z.array(z.string().min(1, 'Weakness cannot be empty')),
   achievements: z.array(z.string().min(1, 'Achievement cannot be empty')),
+  aiSuggestions: z.string().optional(), // Added to schema, though primarily from aiState for PDF
 });
 
 const resumeFormSchema = z.object({
@@ -79,15 +81,18 @@ const ResumeForm: React.FC = () => {
   const watchedProfessionalDetails = watch("professionalDetails");
   const watchedObjective = watch("objective");
 
-  // Update resumeData whenever form values change
+  // Update resumeData state primarily for ResumePreview component's immediate updates (not directly for PDF)
   React.useEffect(() => {
     setResumeData(prev => ({
       ...prev,
       personalDetails: watchedPersonalDetails,
-      professionalDetails: watchedProfessionalDetails,
-      objective: watchedObjective || prev.objective, // Keep AI generated if form field is empty
+      professionalDetails: {
+        ...watchedProfessionalDetails,
+        aiSuggestions: aiState.analysisSuggestions || watchedProfessionalDetails.aiSuggestions, // Prioritize live AI state
+      },
+      objective: watchedObjective || prev.objective,
     }));
-  }, [watchedPersonalDetails, watchedProfessionalDetails, watchedObjective]);
+  }, [watchedPersonalDetails, watchedProfessionalDetails, watchedObjective, aiState.analysisSuggestions]);
 
 
   const { fields: educationFields, append: appendEducation, remove: removeEducation } = useFieldArray({
@@ -100,19 +105,18 @@ const ResumeForm: React.FC = () => {
     name: "professionalDetails.experience",
   });
   
-  // Functions to handle array fields (skills, strengths, weaknesses, achievements)
-  const handleArrayFieldChange = (fieldName: keyof ProfessionalDetails, index: number, value: string) => {
+  const handleArrayFieldChange = (fieldName: keyof Omit<ProfessionalDetails, 'aiSuggestions'>, index: number, value: string) => {
     const currentArray = [...(resumeData.professionalDetails[fieldName] as string[])];
     currentArray[index] = value;
     setValue(`professionalDetails.${fieldName}` as any, currentArray, { shouldValidate: true });
   };
 
-  const addArrayFieldItem = (fieldName: keyof ProfessionalDetails) => {
+  const addArrayFieldItem = (fieldName: keyof Omit<ProfessionalDetails, 'aiSuggestions'>) => {
     const currentArray = [...(resumeData.professionalDetails[fieldName] as string[]), ''];
     setValue(`professionalDetails.${fieldName}` as any, currentArray, { shouldValidate: true });
   };
 
-  const removeArrayFieldItem = (fieldName: keyof ProfessionalDetails, index: number) => {
+  const removeArrayFieldItem = (fieldName: keyof Omit<ProfessionalDetails, 'aiSuggestions'>, index: number) => {
     const currentArray = [...(resumeData.professionalDetails[fieldName] as string[])];
     currentArray.splice(index, 1);
     setValue(`professionalDetails.${fieldName}` as any, currentArray, { shouldValidate: true });
@@ -134,10 +138,10 @@ const ResumeForm: React.FC = () => {
     setAiState(prev => ({ ...prev, isObjectiveLoading: true }));
     try {
       const input: GenerateResumeObjectiveInput = {
-        skills: resumeData.professionalDetails.skills.join(', '),
-        experience: resumeData.professionalDetails.experience.map(exp => `${exp.role} at ${exp.company}: ${exp.responsibilities.join('. ')}`).join('; '),
-        strengths: resumeData.professionalDetails.strengths.join(', '),
-        weaknesses: resumeData.professionalDetails.weaknesses.join(', '),
+        skills: watchedProfessionalDetails.skills.join(', '), // Use watched value for current data
+        experience: watchedProfessionalDetails.experience.map(exp => `${exp.role} at ${exp.company}: ${exp.responsibilities.join('. ')}`).join('; '),
+        strengths: watchedProfessionalDetails.strengths.join(', '),
+        weaknesses: watchedProfessionalDetails.weaknesses.join(', '),
       };
       const result = await generateResumeObjective(input);
       setValue('objective', result.objective, {shouldValidate: true});
@@ -157,13 +161,15 @@ const ResumeForm: React.FC = () => {
     }
     setAiState(prev => ({ ...prev, isAnalysisLoading: true }));
     try {
-      const resumeDetailsString = `Skills: ${resumeData.professionalDetails.skills.join(', ')}; Experience: ${resumeData.professionalDetails.experience.map(exp => exp.role + " at " + exp.company).join(', ')}; Strengths: ${resumeData.professionalDetails.strengths.join(', ')}; Education: ${resumeData.professionalDetails.education.map(edu => edu.degree + " from " + edu.institution).join(', ')}.`;
+      // Use watched values for the most current resume details
+      const resumeDetailsString = `Skills: ${watchedProfessionalDetails.skills.join(', ')}; Experience: ${watchedProfessionalDetails.experience.map(exp => exp.role + " at " + exp.company).join(', ')}; Strengths: ${watchedProfessionalDetails.strengths.join(', ')}; Education: ${watchedProfessionalDetails.education.map(edu => edu.degree + " from " + edu.institution).join(', ')}.`;
       const input: AnalyzeJobDescriptionInput = {
         jobDescription: aiState.jobDescription,
         resumeDetails: resumeDetailsString,
       };
       const result = await analyzeJobDescription(input);
       setAiState(prev => ({ ...prev, analysisSuggestions: result.suggestions, isAnalysisLoading: false }));
+      // setValue('professionalDetails.aiSuggestions', result.suggestions); // Optionally set in RHF if needed elsewhere
       toast({ title: 'Analysis Complete', description: 'AI has provided suggestions based on the job description.' });
     } catch (error) {
       console.error('Error analyzing job description:', error);
@@ -172,14 +178,16 @@ const ResumeForm: React.FC = () => {
     }
   };
   
-  const onSubmit = async (_data: ResumeData) => { // _data is validated form data by RHF
-    setAiState(prev => ({...prev, isObjectiveLoading: true, isAnalysisLoading: true})); // Generic loading for PDF
+  const onSubmit = async (_data: ResumeData) => { 
+    setAiState(prev => ({...prev, isObjectiveLoading: true, isAnalysisLoading: true})); 
     try {
-      // Ensure resumeData state used by PDF generator is fully up-to-date from RHF state
-      const currentFormData = { // This uses RHF's latest validated state
+      const currentFormData: ResumeData = { 
         personalDetails: watchedPersonalDetails,
-        professionalDetails: watchedProfessionalDetails,
-        objective: watchedObjective || aiState.generatedObjective, // Prioritize RHF, then AI state
+        professionalDetails: {
+          ...watchedProfessionalDetails,
+          aiSuggestions: aiState.analysisSuggestions, // Add AI suggestions here for PDF generation
+        },
+        objective: watchedObjective || aiState.generatedObjective, 
       };
       await generatePdf(currentFormData);
       toast({ title: 'PDF Generated', description: 'Your resume has been downloaded.' });
@@ -191,10 +199,10 @@ const ResumeForm: React.FC = () => {
     }
   };
 
-  const renderListInput = (label: string, fieldName: keyof ProfessionalDetails, Icon: React.ElementType) => (
+  const renderListInput = (label: string, fieldName: keyof Omit<ProfessionalDetails, 'aiSuggestions'>, Icon: React.ElementType) => (
     <div className="space-y-2">
       <Label htmlFor={fieldName} className="flex items-center"><Icon className="mr-2 h-4 w-4" />{label}</Label>
-      {(resumeData.professionalDetails[fieldName] as string[]).map((item, index) => (
+      {(watchedProfessionalDetails[fieldName] as string[] || []).map((item, index) => (
         <div key={index} className="flex items-center space-x-2">
           <Input
             id={`${fieldName}-${index}`}
@@ -342,7 +350,7 @@ const ResumeForm: React.FC = () => {
                               name={`professionalDetails.experience.${index}.responsibilities`}
                               render={({ field: { onChange, value = [] } }) => (
                                 <>
-                                  {value.map((resp, rIndex) => (
+                                  {(value || []).map((resp, rIndex) => (
                                     <div key={rIndex} className="flex items-center space-x-2 mb-2">
                                       <Input
                                         value={resp}
@@ -448,9 +456,11 @@ const ResumeForm: React.FC = () => {
           </Tabs>
         </form>
       </Card>
+      {/* Pass the full resumeData including AI suggestions from local state for preview updates */}
       <ResumePreview resumeData={resumeData} />
     </div>
   );
 };
 
 export default ResumeForm;
+
