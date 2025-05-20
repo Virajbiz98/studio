@@ -2,7 +2,8 @@
 'use server';
 
 /**
- * @fileOverview Generates a personalized resume objective based on the user's skills and experience.
+ * @fileOverview Generates a personalized resume objective based on the user's skills and experience,
+ * optionally tailored with insights from a job description analysis.
  *
  * - generateResumeObjective - A function that generates a resume objective.
  * - GenerateResumeObjectiveInput - The input type for the generateResumeObjective function.
@@ -17,6 +18,7 @@ const GenerateResumeObjectiveInputSchema = z.object({
   experience: z.string().describe('A summary of the user\u0027s work experience.'),
   strengths: z.string().describe('A list of the user\u0027s key strengths.'),
   weaknesses: z.string().describe('A list of the user\u0027s weaknesses.'),
+  jobAnalysis: z.string().optional().describe('Analysis of a job description, if available, to tailor the objective.'),
 });
 export type GenerateResumeObjectiveInput = z.infer<typeof GenerateResumeObjectiveInputSchema>;
 
@@ -33,14 +35,21 @@ const prompt = ai.definePrompt({
   name: 'generateResumeObjectivePrompt',
   input: {schema: GenerateResumeObjectiveInputSchema},
   output: {schema: GenerateResumeObjectiveOutputSchema},
-  prompt: `You are a resume writing expert. Your goal is to write a compelling resume objective based on the user's skills and experience.
+  prompt: `You are a resume writing expert. Your goal is to write a compelling resume objective based on the user's skills, experience, strengths, weaknesses, and optionally, insights from a job description analysis.
 
-Skills: {{{skills}}}
-Experience: {{{experience}}}
-Strengths: {{{strengths}}}
-Weaknesses: {{{weaknesses}}}
+User's Skills: {{{skills}}}
+User's Experience: {{{experience}}}
+User's Strengths: {{{strengths}}}
+User's Weaknesses: {{{weaknesses}}}
 
-Write a personalized resume objective that highlights the user's key skills and experience. The objective should be concise and tailored to the user's strengths, while also acknowledging areas for growth.
+{{#if jobAnalysis}}
+Insights from Job Description Analysis:
+{{{jobAnalysis}}}
+
+Based on all the information above, especially incorporating insights from the job description analysis, write a personalized and targeted resume objective. The objective should be concise and impactful.
+{{else}}
+Based on the user's skills, experience, strengths, and weaknesses, write a personalized resume objective that highlights their key attributes. The objective should be concise, impactful, and tailored to their profile.
+{{/if}}
 `,
 });
 

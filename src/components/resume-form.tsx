@@ -56,7 +56,7 @@ const professionalDetailsSchema = z.object({
   strengths: z.array(z.string().min(1, 'Strength cannot be empty')),
   weaknesses: z.array(z.string().min(1, 'Weakness cannot be empty')),
   achievements: z.array(z.string().min(1, 'Achievement cannot be empty')),
-  // aiSuggestions removed from schema
+  aiSuggestions: z.string().optional(),
 });
 
 const resumeFormSchema = z.object({
@@ -86,7 +86,7 @@ const ResumeForm: React.FC = () => {
     setResumeData(prev => ({
       ...prev,
       personalDetails: watchedPersonalDetails,
-      professionalDetails: watchedProfessionalDetails, // aiSuggestions are not part of this state anymore
+      professionalDetails: watchedProfessionalDetails, 
       objective: watchedObjective || prev.objective,
     }));
   }, [watchedPersonalDetails, watchedProfessionalDetails, watchedObjective]);
@@ -139,6 +139,7 @@ const ResumeForm: React.FC = () => {
         experience: watchedProfessionalDetails.experience.map(exp => `${exp.role} at ${exp.company}: ${exp.responsibilities.join('. ')}`).join('; '),
         strengths: watchedProfessionalDetails.strengths.join(', '),
         weaknesses: watchedProfessionalDetails.weaknesses.join(', '),
+        jobAnalysis: aiState.analysisSuggestions || undefined, // Pass job analysis if available
       };
       const result = await generateResumeObjective(input);
       setValue('objective', result.objective, {shouldValidate: true});
@@ -164,6 +165,7 @@ const ResumeForm: React.FC = () => {
         resumeDetails: resumeDetailsString,
       };
       const result = await analyzeJobDescription(input);
+      setValue('professionalDetails.aiSuggestions', result.suggestions, {shouldValidate: true}); // Save suggestions to form
       setAiState(prev => ({ ...prev, analysisSuggestions: result.suggestions, isAnalysisLoading: false }));
       toast({ title: 'Analysis Complete', description: 'AI has provided suggestions based on the job description.' });
     } catch (error) {
@@ -178,7 +180,7 @@ const ResumeForm: React.FC = () => {
     try {
       const currentFormData: ResumeData = { 
         personalDetails: watchedPersonalDetails,
-        professionalDetails: watchedProfessionalDetails, // aiSuggestions are no longer part of professionalDetails for PDF
+        professionalDetails: watchedProfessionalDetails, 
         objective: watchedObjective || aiState.generatedObjective, 
       };
       await generatePdf(currentFormData);
@@ -191,7 +193,7 @@ const ResumeForm: React.FC = () => {
     }
   };
 
-  const renderListInput = (label: string, fieldName: keyof ProfessionalDetails, Icon: React.ElementType) => (
+  const renderListInput = (label: string, fieldName: keyof Omit<ProfessionalDetails, 'aiSuggestions'>, Icon: React.ElementType) => (
     <div className="space-y-2">
       <Label htmlFor={fieldName} className="flex items-center"><Icon className="mr-2 h-4 w-4" />{label}</Label>
       {(watchedProfessionalDetails[fieldName] as string[] || []).map((item, index) => (
@@ -448,7 +450,6 @@ const ResumeForm: React.FC = () => {
           </Tabs>
         </form>
       </Card>
-      {/* Pass the full resumeData. AI suggestions are handled by aiState for UI display only */}
       <ResumePreview resumeData={resumeData} />
     </div>
   );
