@@ -1,3 +1,4 @@
+// src/lib/pdf-generator.ts
 'use client';
 
 import html2canvas from 'html2canvas';
@@ -11,30 +12,29 @@ export const generatePdf = async (resumeData: ResumeData): Promise<void> => {
     throw new Error('Resume preview element not found. Cannot generate PDF.');
   }
 
-  // Temporarily make it visible if it's display: none
-  const originalDisplay = resumeElement.style.display;
-  resumeElement.style.display = 'block';
-  // Ensure fixed dimensions for A4-like rendering
-  resumeElement.style.width = '210mm';
-  // resumeElement.style.height = '297mm'; // Height can be auto to fit content, jspdf will handle multi-page
+  // Store original inline style attributes that might be modified or are crucial for restoration.
+  // `resumeElement.style.width` will read the inline style value (e.g., "210mm").
+  const originalInlineWidth = resumeElement.style.width;
+  // `resumeElement.style.display` will read the inline style value (e.g., "flex").
+  const originalInlineDisplay = resumeElement.style.display;
+
+  // Prepare element for capture:
+  // The ResumePreview component has inline styles: `display: 'flex'` and `width: '210mm'`.
+  // We should not change `display` to 'block' if it's 'flex', as this can alter layout.
+  // Maintaining 'flex' is important if the component's internal layout depends on it.
+  // We ensure width is set for consistent capture size.
+  resumeElement.style.width = '210mm'; 
+  // The element is positioned off-screen. html2canvas should handle this.
+  // If `originalInlineDisplay` was 'none', we might set `resumeElement.style.display = 'flex';` (or its natural display type) here.
+  // But since it's already 'flex' (from ResumePreview's inline style), no change to `display` is needed for visibility.
 
   try {
     const canvas = await html2canvas(resumeElement, {
       scale: 2, // Increase scale for better quality
-      useCORS: true, // For images from other origins if any
-      logging: true,
-      onclone: (document) => {
-        // Fix for images not rendering in html2canvas
-        // This is a common workaround: re-query and set image sources if necessary
-        // For photoPreview, it should be a data URL or blob URL, which usually works fine
-      }
+      useCORS: true, // For images from other origins
+      logging: true, // Enable html2canvas logging for easier debugging in browser console
     });
     
-    // Restore original display
-    resumeElement.style.display = originalDisplay;
-    resumeElement.style.width = ''; // Reset width
-    // resumeElement.style.height = ''; // Reset height
-
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF({
       orientation: 'portrait',
@@ -47,17 +47,19 @@ export const generatePdf = async (resumeData: ResumeData): Promise<void> => {
     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
     
     let heightLeft = pdfHeight;
-    let position = 0;
-    const pageHeight = pdf.internal.pageSize.getHeight();
+    let currentPosition = 0;
+    const pageHeightA4 = pdf.internal.pageSize.getHeight();
 
-    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-    heightLeft -= pageHeight;
+    // Add the first page/image segment
+    pdf.addImage(imgData, 'PNG', 0, currentPosition, pdfWidth, pdfHeight);
+    heightLeft -= pageHeightA4;
 
+    // Add subsequent pages if content exceeds one page
     while (heightLeft > 0) {
-      position = heightLeft - pdfHeight;
+      currentPosition -= pageHeightA4; // Adjust Y position for the segment of the image on new page
       pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-      heightLeft -= pageHeight;
+      pdf.addImage(imgData, 'PNG', 0, currentPosition, pdfWidth, pdfHeight);
+      heightLeft -= pageHeightA4;
     }
     
     const fileName = `${resumeData.personalDetails.name.replace(/\s+/g, '_') || 'Resume'}_Resume.pdf`;
@@ -65,10 +67,10 @@ export const generatePdf = async (resumeData: ResumeData): Promise<void> => {
 
   } catch (error) {
     console.error('Error generating PDF:', error);
-    // Restore original display in case of error
-    resumeElement.style.display = originalDisplay;
-    resumeElement.style.width = '';
-    // resumeElement.style.height = '';
-    throw new Error('Failed to generate PDF. Check console for details.');
+    throw new Error(`Failed to generate PDF. ${error instanceof Error ? error.message : 'Unknown error'}`);
+  } finally {
+    // Restore original inline styles to ensure the element is back to its pre-capture state.
+    resumeElement.style.width = originalInlineWidth;
+    resumeElement.style.display = originalInlineDisplay;
   }
 };
