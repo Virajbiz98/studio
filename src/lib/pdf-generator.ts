@@ -1,4 +1,4 @@
-// src/lib/pdf-generator.ts
+
 'use client';
 
 import html2canvas from 'html2canvas';
@@ -12,54 +12,63 @@ export const generatePdf = async (resumeData: ResumeData): Promise<void> => {
     throw new Error('Resume preview element not found. Cannot generate PDF.');
   }
 
-  // Store original inline style attributes that might be modified or are crucial for restoration.
-  // `resumeElement.style.width` will read the inline style value (e.g., "210mm").
+  // Store original inline style attributes that might be modified.
   const originalInlineWidth = resumeElement.style.width;
-  // `resumeElement.style.display` will read the inline style value (e.g., "flex").
   const originalInlineDisplay = resumeElement.style.display;
+  // The ResumePreview component itself sets width: '210mm' and display: 'flex'.
+  // We ensure width is '210mm' for capture.
+  resumeElement.style.width = '210mm';
+  // Ensure the element is treated as 'flex' if it has specific flex children behavior,
+  // which it does. This should match its original display style from React.
+  resumeElement.style.display = 'flex';
 
-  // Prepare element for capture:
-  // The ResumePreview component has inline styles: `display: 'flex'` and `width: '210mm'`.
-  // We should not change `display` to 'block' if it's 'flex', as this can alter layout.
-  // Maintaining 'flex' is important if the component's internal layout depends on it.
-  // We ensure width is set for consistent capture size.
-  resumeElement.style.width = '210mm'; 
-  // The element is positioned off-screen. html2canvas should handle this.
-  // If `originalInlineDisplay` was 'none', we might set `resumeElement.style.display = 'flex';` (or its natural display type) here.
-  // But since it's already 'flex' (from ResumePreview's inline style), no change to `display` is needed for visibility.
+
+  // Get the computed dimensions in pixels *after* styles are applied.
+  // These are used to hint html2canvas about the capture area.
+  const elementWidthPx = resumeElement.offsetWidth;
+  const elementHeightPx = resumeElement.scrollHeight; // Use scrollHeight to capture full content
 
   try {
     const canvas = await html2canvas(resumeElement, {
       scale: 2, // Increase scale for better quality
       useCORS: true, // For images from other origins
-      logging: true, // Enable html2canvas logging for easier debugging in browser console
+      logging: true, // Enable html2canvas logging for easier debugging
+      width: elementWidthPx, // Explicitly set canvas width
+      height: elementHeightPx, // Explicitly set canvas height
+      windowWidth: elementWidthPx, // Hint the "window" width for rendering
+      windowHeight: elementHeightPx, // Hint the "window" height for rendering
+      scrollX: 0, // Ensure no unintended scroll offset is applied by html2canvas
+      scrollY: 0,
+      x: 0, // Start capture from the top-left of the element
+      y: 0,
     });
     
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
-      format: 'a4',
+      format: 'a4', // A4 dimensions: 210mm x 297mm
     });
 
     const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    const pdfPageWidth = pdf.internal.pageSize.getWidth(); // e.g., 210mm for A4 portrait
+    // Calculate the image height in PDF units, maintaining aspect ratio
+    const pdfImageHeight = (imgProps.height * pdfPageWidth) / imgProps.width;
     
-    let heightLeft = pdfHeight;
-    let currentPosition = 0;
-    const pageHeightA4 = pdf.internal.pageSize.getHeight();
+    let heightLeft = pdfImageHeight;
+    let position = 0; // Current Y position in PDF
+    const pdfPageHeight = pdf.internal.pageSize.getHeight(); // e.g., 297mm for A4
 
-    // Add the first page/image segment
-    pdf.addImage(imgData, 'PNG', 0, currentPosition, pdfWidth, pdfHeight);
-    heightLeft -= pageHeightA4;
+    // Add the first page (or segment of the image)
+    pdf.addImage(imgData, 'PNG', 0, position, pdfPageWidth, pdfImageHeight);
+    heightLeft -= pdfPageHeight;
 
-    // Add subsequent pages if content exceeds one page
+    // Add more pages if the image height exceeds the page height
     while (heightLeft > 0) {
-      currentPosition -= pageHeightA4; // Adjust Y position for the segment of the image on new page
+      position -= pdfPageHeight; // New Y position for the image segment on the next page
       pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, currentPosition, pdfWidth, pdfHeight);
-      heightLeft -= pageHeightA4;
+      pdf.addImage(imgData, 'PNG', 0, position, pdfPageWidth, pdfImageHeight);
+      heightLeft -= pdfPageHeight;
     }
     
     const fileName = `${resumeData.personalDetails.name.replace(/\s+/g, '_') || 'Resume'}_Resume.pdf`;
@@ -67,7 +76,9 @@ export const generatePdf = async (resumeData: ResumeData): Promise<void> => {
 
   } catch (error) {
     console.error('Error generating PDF:', error);
-    throw new Error(`Failed to generate PDF. ${error instanceof Error ? error.message : 'Unknown error'}`);
+    // Ensure the error message is useful.
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to generate PDF. ${errorMessage}`);
   } finally {
     // Restore original inline styles to ensure the element is back to its pre-capture state.
     resumeElement.style.width = originalInlineWidth;

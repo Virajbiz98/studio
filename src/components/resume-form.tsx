@@ -1,4 +1,7 @@
+// src/components/resume-form.tsx
 
+// This line tells Next.js that this component should be rendered on the client-side.
+// By default, components in the `app` directory are Server Components.
 'use client';
 
 import type { ChangeEvent, FormEvent } from 'react';
