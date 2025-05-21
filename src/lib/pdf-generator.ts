@@ -24,9 +24,17 @@ export const generatePdf = async (resumeData: ResumeData): Promise<void> => {
 
 
   // Get the computed dimensions in pixels *after* styles are applied.
-  // These are used to hint html2canvas about the capture area.
   const elementWidthPx = resumeElement.offsetWidth;
   const elementHeightPx = resumeElement.scrollHeight; // Use scrollHeight to capture full content
+
+  // Check if the element has valid dimensions for capture
+  if (elementWidthPx === 0 || elementHeightPx === 0) {
+    console.error('Resume preview element has zero dimensions (offsetWidth or scrollHeight is 0). This might be because it or its parent is hidden (e.g., display: none). html2canvas cannot capture an element with no dimensions.', { width: elementWidthPx, height: elementHeightPx });
+    // Restore original styles before throwing
+    resumeElement.style.width = originalInlineWidth;
+    resumeElement.style.display = originalInlineDisplay;
+    throw new Error('PDF Generation Failed: Resume preview is not rendered with visible dimensions. Please ensure the preview area is displayed, or try on a larger screen.');
+  }
 
   try {
     const canvas = await html2canvas(resumeElement, {
@@ -44,6 +52,13 @@ export const generatePdf = async (resumeData: ResumeData): Promise<void> => {
     });
     
     const imgData = canvas.toDataURL('image/png');
+
+    // Validate the generated image data URI
+    if (!imgData || !imgData.startsWith('data:image/png;base64,')) {
+      console.error('html2canvas did not return a valid PNG data URI. Received:', imgData ? imgData.substring(0, 100) + "..." : "null or undefined");
+      throw new Error('PDF Generation Failed: Could not capture resume content as a valid PNG image.');
+    }
+    
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
