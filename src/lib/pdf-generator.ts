@@ -36,6 +36,10 @@ export const generatePdf = async (resumeData: ResumeData): Promise<void> => {
     throw new Error('PDF Generation Failed: Resume preview is not rendered with visible dimensions. Please ensure the preview area is displayed, or try on a larger screen.');
   }
 
+  console.log('Resume Element:', resumeElement);
+  console.log('Element Width:', elementWidthPx);
+  console.log('Element Height:', elementHeightPx);
+
   try {
     const canvas = await html2canvas(resumeElement, {
       scale: 3, // Increase scale for better quality
