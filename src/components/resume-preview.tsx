@@ -224,10 +224,6 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({
             </section>
           )}
 
-          <section>
-            <h2 style={sectionTitleStyle}>References</h2>
-            <p style={{ fontSize: '12px', fontStyle: 'italic', color: rightColumnTextColor }}>References available upon request.</p>
-          </section>
         </div>
       </div>
     </div>
@@ -235,3 +231,4 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({
 };
 
 export default ResumePreview;
+
