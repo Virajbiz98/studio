@@ -38,7 +38,7 @@ export const generatePdf = async (resumeData: ResumeData): Promise<void> => {
 
   try {
     const canvas = await html2canvas(resumeElement, {
-      scale: 2, // Increase scale for better quality
+      scale: 3, // Increase scale for better quality
       useCORS: true, // For images from other origins
       logging: true, // Enable html2canvas logging for easier debugging
       width: elementWidthPx, // Explicitly set canvas width
