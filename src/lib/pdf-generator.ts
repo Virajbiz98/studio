@@ -36,52 +36,52 @@ export const generatePdf = async (resumeData: ResumeData): Promise<void> => {
     throw new Error('PDF Generation Failed: Resume preview is not rendered with visible dimensions. Please ensure the preview area is displayed, or try on a larger screen.');
   }
 
-  console.log('Resume Element:', resumeElement);
-  console.log('Element Width:', elementWidthPx);
-  console.log('Element Height:', elementHeightPx);
+  // Attempt to scroll the element into view and add a small delay to ensure rendering
+  resumeElement.scrollIntoView();
 
-  try {
-    const canvas = await html2canvas(resumeElement, {
-      scale: 3, // Increase scale for better quality
-      useCORS: true, // For images from other origins
-      logging: true, // Enable html2canvas logging for easier debugging
-      width: elementWidthPx, // Explicitly set canvas width
-      height: elementHeightPx, // Explicitly set canvas height
-      windowWidth: elementWidthPx, // Hint the "window" width for rendering
-      windowHeight: elementHeightPx, // Hint the "window" height for rendering
-      scrollX: 0, // Ensure no unintended scroll offset is applied by html2canvas
-      scrollY: 0,
-      x: 0, // Start capture from the top-left of the element
-      y: 0,
-    });
-    
-    const imgData = canvas.toDataURL('image/png');
+  setTimeout(async () => {
+    console.log('Resume Element:', resumeElement);
+    console.log('Element Width:', elementWidthPx);
+    console.log('Element Height:', elementHeightPx);
 
-    // Validate the generated image data URI
-    if (!imgData || !imgData.startsWith('data:image/png;base64,')) {
-      console.error('html2canvas did not return a valid PNG data URI. Received:', imgData ? imgData.substring(0, 100) + "..." : "null or undefined");
-      throw new Error('PDF Generation Failed: Could not capture resume content as a valid PNG image.');
+    try {
+      const canvas = await html2canvas(resumeElement, {
+        scale: 3, // Increase scale for better quality
+        useCORS: true, // For images from other origins
+        logging: true, // Enable html2canvas logging for easier debugging
+        width: elementWidthPx, // Explicitly set canvas width
+        height: elementHeightPx, // Explicitly set canvas height
+        windowWidth: elementWidthPx, // Hint the "window" width for rendering
+        windowHeight: elementHeightPx, // Hint the "window" height for rendering
+        scrollX: 0, // Ensure no unintended scroll offset is applied by html2canvas
+        scrollY: 0,
+        x: 0, // Start capture from the top-left of the element
+        y: 0,
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+
+      // Validate the generated image data URI
+      if (!imgData || !imgData.startsWith('data:image/png;base64,')) {
+        console.error('html2canvas did not return a valid PNG data URI. Received:', imgData ? imgData.substring(0, 100) + "..." : "null or undefined");
+        throw new Error('PDF Generation Failed: Could not capture resume content as a valid PNG image.');
+      }
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4', // A4 dimensions: 210mm x 297mm
+      });
+
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfPageWidth = pdf.internal.pageSize.getWidth(); // e.g., 210mm for A4 portrait
+      // Calculate the image height in PDF units, maintaining aspect ratio
+      const pdfImageHeight = (imgProps.height * pdfPageWidth) / imgProps.width;
+
+      let heightLeft = pdfImageHeight;
+      let position = 0; // Current Y position in PDF
+      const pdfPageHeight = pdf.internal.pageSize.getHeight(); // e.g., 297mm for A4
     }
-    
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4', // A4 dimensions: 210mm x 297mm
-    });
-
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfPageWidth = pdf.internal.pageSize.getWidth(); // e.g., 210mm for A4 portrait
-    // Calculate the image height in PDF units, maintaining aspect ratio
-    const pdfImageHeight = (imgProps.height * pdfPageWidth) / imgProps.width;
-    
-    let heightLeft = pdfImageHeight;
-    let position = 0; // Current Y position in PDF
-    const pdfPageHeight = pdf.internal.pageSize.getHeight(); // e.g., 297mm for A4
-
-    // Add the first page (or segment of the image)
-    pdf.addImage(imgData, 'PNG', 0, position, pdfPageWidth, pdfImageHeight);
-    heightLeft -= pdfPageHeight;
-
     // Add more pages if the image height exceeds the page height
     while (heightLeft > 0) {
       position -= pdfPageHeight; // New Y position for the image segment on the next page
@@ -90,17 +90,18 @@ export const generatePdf = async (resumeData: ResumeData): Promise<void> => {
       heightLeft -= pdfPageHeight;
     }
     
-    const fileName = `${resumeData.personalDetails.name.replace(/\s+/g, '_') || 'Resume'}_Resume.pdf`;
-    pdf.save(fileName);
+      const fileName = `${resumeData.personalDetails.name.replace(/\s+/g, '_') || 'Resume'}_Resume.pdf`;
+      pdf.save(fileName);
 
-  } catch (error) {
-    console.error('Error generating PDF:', error);
-    // Ensure the error message is useful.
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to generate PDF. ${errorMessage}`);
-  } finally {
-    // Restore original inline styles to ensure the element is back to its pre-capture state.
-    resumeElement.style.width = originalInlineWidth;
-    resumeElement.style.display = originalInlineDisplay;
-  }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      // Ensure the error message is useful.
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to generate PDF. ${errorMessage}`);
+    } finally {
+      // Restore original inline styles to ensure the element is back to its pre-capture state.
+      resumeElement.style.width = originalInlineWidth;
+      resumeElement.style.display = originalInlineDisplay;
+    }
+  }, 500); // 500ms delay
 };
